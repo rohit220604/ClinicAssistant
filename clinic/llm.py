@@ -158,26 +158,10 @@ class OfflineClient:
 
     def _log(self, user_msgs: list[str], text: str, lang: str) -> ChatResult:
         severity = slots.find_severity(text)
-
-        symptom = None
-        for msg in reversed(user_msgs):
-            if slots.find_severity(msg) is None:
-                if keyword_intent(msg) == Intent.LOG_SYMPTOM:
-                    symptom = msg
-                    break
-
+        symptom = user_msgs[0] if user_msgs else text
         if severity is None:
             return self._text(say("ask_severity", lang))
-
-        symptom = symptom or text
-
-        return self._call(
-            "log_symptom",
-            {
-                "symptom": symptom,
-                "severity": severity,
-            },
-        )
+        return self._call("log_symptom", {"symptom": symptom, "severity": severity})
 
     def _call(self, name: str, args: dict) -> ChatResult:
         call_id = f"call_{uuid.uuid4().hex[:8]}"

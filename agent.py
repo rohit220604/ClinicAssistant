@@ -59,23 +59,15 @@ class Agent:
 
     def run_turn(self, state: ConversationState, message: str) -> TurnResult:
         with stopwatch() as elapsed:
-            detected_lang = detect_language(message)
-
-            if not state.history or detected_lang != "en":
-                state.language = detected_lang
-
-            lang = state.language
-            safety = classify_safety(message, self.client)
-            llm_calls = 1 if safety.source in ("llm", "fail_closed") else 0
-            if safety.source in ("llm", "fail_closed"):
-                log_llm_call(safety.latency_ms, self.client.classifier_model, "safety")
+            lang, safety, llm_calls = self._safety_step(message)
+            state.language = lang
 
             # Anything not clearly SAFE stops here - no routing, no tools.
-            if safety.degraded:
-                return self._blocked(say("safety_degraded", lang), safety, llm_calls, elapsed())
-            if safety.verdict != Verdict.SAFE:
-                reply = say(_BLOCK_REPLY[safety.verdict], lang)
-                return self._blocked(reply, safety, llm_calls, elapsed())
+            if safety.degraded or safety.verdict != Verdict.SAFE:
+                reply = self.block_reply(safety.verdict, safety.degraded, lang)
+                log_turn(elapsed(), llm_calls, self.offline)
+                return TurnResult(reply, safety.verdict, safety.source, True,
+                                  safety.degraded, 0, llm_calls, elapsed())
 
             reply, tool_calls, tools_used, chat_llm_calls = self._model_loop(state, message, lang)
             llm_calls += chat_llm_calls
@@ -84,11 +76,24 @@ class Agent:
             return TurnResult(reply, safety.verdict, safety.source, False, False,
                               tool_calls, llm_calls, elapsed(), tools_used)
 
-    # --- internals -------------------------------------------------------
-    def _blocked(self, reply: str, safety, llm_calls: int, turn_ms: float) -> TurnResult:
-        log_turn(turn_ms, llm_calls, self.offline)
-        return TurnResult(reply, safety.verdict, safety.source, True, safety.degraded, 0, llm_calls, turn_ms)
+    # --- steps (shared by run_turn and the LangGraph router) -------------
+    def _safety_step(self, message: str):
+        """Language detection + the safety gate. Returns (language, SafetyResult,
+        classifier llm-call count). Shared so the graph can't drift from the loop."""
+        lang = detect_language(message)
+        safety = classify_safety(message, self.client)
+        llm_calls = 0
+        if safety.source in ("llm", "fail_closed"):
+            llm_calls = 1
+            log_llm_call(safety.latency_ms, self.client.classifier_model, "safety")
+        return lang, safety, llm_calls
 
+    def block_reply(self, verdict: str, degraded: bool, lang: str) -> str:
+        if degraded:
+            return say("safety_degraded", lang)
+        return say(_BLOCK_REPLY[verdict], lang)
+
+    # --- internals -------------------------------------------------------
     def _model_loop(self, state: ConversationState, message: str, lang: str):
         state.add_user(message)
         system = {"role": "system", "content": build_system_prompt(state.patient_id, date.today().isoformat(), lang)}
