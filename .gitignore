@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Virtual env
+.venv/
+venv/
+
+# Secrets
+.env
+
+# Local runtime data / logs (never commit patient data)
+data/*.json
+logs/*.jsonl
+
+# Editor
+.vscode/
+.idea/
+.DS_Store
+
+# Assignment brief (not part of the deliverable)
+*.pdf
