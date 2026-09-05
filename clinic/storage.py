@@ -17,7 +17,10 @@ from clinic.config import STORE_PATH
 EMPTY_STORE: dict[str, list] = {"symptoms": [], "appointments": []}
 
 
-def load_store(path: Path = STORE_PATH) -> dict[str, Any]:
+def load_store(path: Path | None = None) -> dict[str, Any]:
+    if path is None:
+        path = STORE_PATH
+
     if not path.exists():
         return {"symptoms": [], "appointments": []}
     with path.open("r", encoding="utf-8") as fh:
@@ -28,7 +31,9 @@ def load_store(path: Path = STORE_PATH) -> dict[str, Any]:
     return data
 
 
-def save_store(data: dict[str, Any], path: Path = STORE_PATH) -> None:
+def save_store(data: dict[str, Any], path: Path | None = None) -> None:
+    if path is None:
+        path = STORE_PATH
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=str(path.parent), suffix=".tmp")
     try:
