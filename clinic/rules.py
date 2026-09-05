@@ -24,7 +24,8 @@ EMERGENCY = [
     "difficulty breathing", "short of breath", "heart attack", "stroke",
     "unconscious", "passed out", "fainted", "collapsed", "seizure", "choking",
     "bleeding heavily", "heavy bleeding", "won't stop bleeding", "severe bleeding",
-    "overdose", "suicide", "kill myself", "want to die", "no pulse", "blue lips",
+    "overdose", "suicide", "kill myself", "want to die", "end my life",
+    "ending my life", "harm myself", "hurt myself", "no pulse", "blue lips",
     # Devanagari
     "सीने में दर्द", "साँस नहीं", "सांस नहीं", "साँस लेने में", "सांस लेने में",
     "बेहोश", "दिल का दौरा", "खून बह", "आत्महत्या", "जान दे",
@@ -37,10 +38,11 @@ EMERGENCY = [
 MEDICAL_ADVICE = [
     # English
     "should i take", "which medicine", "what medicine", "what medication",
-    "which medication", "prescribe", "prescription", "do i have", "is it serious",
+    "which medication", "prescribe", "prescription", "is it serious",
     "what disease", "diagnos", "what's wrong with me", "whats wrong with me",
-    "should i be worried", "dosage", "how much medicine", "can i take", "is it cancer",
-    "is it covid", "what should i do about",
+    "should i be worried", "dosage", "how much medicine", "can i take",
+    "is it cancer", "is it covid", "do i have covid", "do i have corona",
+    "do i have cancer", "what should i do about",
     # Devanagari
     "कौन सी दवा", "कौनसी दवा", "क्या दवा", "दवा बताओ", "दवा लूँ", "मुझे क्या हुआ",
     "कौन सी बीमारी", "क्या बीमारी", "क्या यह गंभीर",
@@ -53,8 +55,8 @@ MEDICAL_ADVICE = [
 LIST_APPOINTMENTS = [
     "my appointment", "my appointments", "upcoming appointment", "list appointment",
     "show my appointment", "when is my appointment", "any appointment",
-    "check my appointment", "what appointments",
-    "मेरी अपॉइंटमेंट", "कब है मेरी", "अपॉइंटमेंट देख",
+    "check my appointment", "what appointments", "dikhao", "dikha do",
+    "मेरी अपॉइंटमेंट", "अपॉइंटमेंट कब", "कब है मेरी", "अपॉइंटमेंट देख",
     "meri appointment", "appointment kab", "kab hai meri", "appointment dekh",
     "appointment check",
 ]
@@ -93,7 +95,10 @@ SMALL_TALK_WORDS = {"hi", "ok", "okay", "bye", "yo", "hii", "helo"}
 def _contains(text: str, phrase: str) -> bool:
     if _DEVANAGARI.search(phrase):
         return phrase in text
-    return re.search(rf"\b{re.escape(phrase)}\b", text) is not None
+    # Left word boundary + an optional common suffix, so "appointment" also
+    # matches "appointments" and "diagnos" matches "diagnose/diagnosed" without
+    # firing inside unrelated words like "enter".
+    return re.search(rf"\b{re.escape(phrase)}(e|s|es|ed|ing)?\b", text) is not None
 
 
 def _any(text: str, phrases: list[str]) -> bool:

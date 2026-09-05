@@ -91,7 +91,13 @@ class GroqClient:
         )
         return _normalise_label(resp.choices[0].message.content, kind)
 
-    def chat(self, messages: list[dict], tools: list[dict], timeout: float | None = None) -> ChatResult:
+    def chat(
+        self,
+        messages: list[dict],
+        tools: list[dict],
+        timeout: float | None = None,
+        state=None,
+    ) -> ChatResult:
         t0 = time.perf_counter()
         resp = self._client.chat.completions.create(
             model=self.chat_model,
@@ -121,31 +127,149 @@ class OfflineClient:
             return keyword_safety(message) or Verdict.SAFE
         return keyword_intent(message) or Intent.UNKNOWN
 
-    def chat(self, messages: list[dict], tools: list[dict], timeout: float | None = None) -> ChatResult:
+    def chat(
+        self,
+        messages: list[dict],
+        tools: list[dict],
+        timeout: float | None = None,
+        state=None,
+    ) -> ChatResult:
         t0 = time.perf_counter()
-        result = self._decide(messages)
+        result = self._decide(messages, state)
         result.llm_ms = (time.perf_counter() - t0) * 1000
         return result
 
     # --- internals -------------------------------------------------------
-    def _decide(self, messages: list[dict]) -> ChatResult:
+    def _decide(self, messages: list[dict], state=None) -> ChatResult:
         if messages and messages[-1]["role"] == "tool":
             text = self._confirm(messages[-1]["content"])
-            return ChatResult({"role": "assistant", "content": text}, text=text)
+            return ChatResult(
+                {"role": "assistant", "content": text},
+                text=text,
+            )
 
-        user_msgs = [m["content"] for m in messages if m["role"] == "user" and m.get("content")]
-        joined = " ".join(user_msgs)
+        user_msgs = [
+            m["content"]
+            for m in messages
+            if m["role"] == "user" and m.get("content")
+        ]
+
         latest = user_msgs[-1] if user_msgs else ""
         lang = detect_language(latest)
-        intent = keyword_intent(latest) or keyword_intent(joined) or Intent.UNKNOWN
+
+        # Continue an unfinished task first.
+        if state and state.pending_intent == Intent.BOOK_APPOINTMENT:
+            return self._continue_booking(state, latest, lang)
+
+        if state and state.pending_intent == Intent.LOG_SYMPTOM:
+            return self._continue_logging(state, latest, lang)
+
+        # Only classify the NEW message when there is no pending task.
+        intent = keyword_intent(latest) or Intent.UNKNOWN
 
         if intent == Intent.BOOK_APPOINTMENT:
-            return self._book(joined, lang)
+            return self._start_booking(state, latest, lang)
+
         if intent == Intent.LOG_SYMPTOM:
-            return self._log(user_msgs, joined, lang)
+            return self._start_logging(state, latest, lang)
+
         if intent == Intent.LIST_APPOINTMENTS:
             return self._call("list_appointments", {})
+
         return self._text(say("fallback", lang))
+    
+    def _start_booking(self, state, text, lang):
+        dept = slots.find_department(text)
+        appointment_date = slots.find_date(text)
+
+        if dept and appointment_date:
+            state.pending_intent = None
+            return self._call(
+                "book_appointment",
+                {
+                    "department": dept,
+                    "date": appointment_date,
+                },
+            )
+
+        state.pending_intent = Intent.BOOK_APPOINTMENT
+        state.pending_department = dept
+        state.pending_date = appointment_date
+
+        if not dept:
+            return self._text(say("ask_department", lang))
+
+        return self._text(say("ask_date", lang))
+    
+    def _continue_booking(self, state, text, lang):
+        dept = state.pending_department or slots.find_department(text)
+        appointment_date = state.pending_date or slots.find_date(text)
+
+        if not dept:
+            dept = slots.find_department(text)
+
+        if not appointment_date:
+            appointment_date = slots.find_date(text)
+
+        state.pending_department = dept
+        state.pending_date = appointment_date
+
+        if not dept:
+            return self._text(say("ask_department", lang))
+
+        if not appointment_date:
+            return self._text(say("ask_date", lang))
+
+        state.pending_intent = None
+        state.pending_department = None
+        state.pending_date = None
+
+        return self._call(
+            "book_appointment",
+            {
+                "department": dept,
+                "date": appointment_date,
+            },
+        )
+    
+    def _start_logging(self, state, text, lang):
+        severity = slots.find_severity(text)
+
+        state.pending_intent = Intent.LOG_SYMPTOM
+        state.pending_symptom = text
+
+        if severity is None:
+            return self._text(say("ask_severity", lang))
+
+        state.pending_intent = None
+        state.pending_symptom = None
+
+        return self._call(
+            "log_symptom",
+            {
+                "symptom": text,
+                "severity": severity,
+            },
+        )
+
+    def _continue_logging(self, state, text, lang):
+        severity = slots.find_severity(text)
+
+        if severity is None:
+            return self._text(say("ask_severity", lang))
+
+        symptom = state.pending_symptom
+
+        state.pending_intent = None
+        state.pending_symptom = None
+
+        return self._call(
+            "log_symptom",
+            {
+                "symptom": symptom,
+                "severity": severity,
+            },
+        )
 
     def _book(self, text: str, lang: str) -> ChatResult:
         dept = slots.find_department(text)

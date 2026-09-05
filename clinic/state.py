@@ -17,6 +17,11 @@ class ConversationState:
     language: str = "en"
     history: list[dict] = field(default_factory=list)
 
+    # Multi-turn slot-filling state.
+    pending_intent: str | None = None
+    pending_department: str | None = None
+    pending_date: str | None = None
+    pending_symptom: str | None = None
     def add_user(self, text: str) -> None:
         self.history.append({"role": "user", "content": text})
 

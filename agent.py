@@ -104,7 +104,11 @@ class Agent:
         reply: str | None = None
         # +2 gives the model room to read tool results and reply after the cap.
         for _ in range(self.max_tool_calls + 2):
-            result = self.client.chat([system] + state.history, TOOL_SCHEMAS)
+            result = self.client.chat(
+                [system] + state.history,
+                TOOL_SCHEMAS,
+                state=state,
+            )
             llm_calls += 1
             log_llm_call(result.llm_ms, self.client.chat_model, "chat")
 

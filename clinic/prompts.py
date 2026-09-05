@@ -31,11 +31,16 @@ not say.
   - Reply in the SAME language the patient wrote in. If they wrote Hindi in \
 Devanagari script, reply in Devanagari. If they wrote Hinglish (Hindi in Latin \
 letters), reply in Hinglish. Keep replies short and clear.
-
+The current reply language is {language}.
+You MUST reply in that language.
 Emergencies and medical-advice requests are handled by a separate safety layer \
 before you see the message, so you can assume the message in front of you is \
 safe to help with."""
 
 
 def build_system_prompt(patient_id: str, today: str, language: str) -> str:
-    return SYSTEM_TEMPLATE.format(patient_id=patient_id, today=today)
+    return SYSTEM_TEMPLATE.format(
+    patient_id=patient_id,
+    today=today,
+    language=language,
+)
