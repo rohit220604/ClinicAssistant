@@ -123,17 +123,17 @@ Measured through the real JSONL logging path (`logs/latency.jsonl`) via
 
 | Metric | Value (offline) |
 | --- | --- |
-| Per-turn latency p50 | 5.21 ms |
-| Per-turn latency p95 | 16.97 ms |
-| Per-LLM-call p50 | 0.81 ms |
-| Per-LLM-call p95 | 2.56 ms |
+| Per-turn latency p50 | 1.92 ms |
+| Per-turn latency p95 | 3.86 ms |
+| Per-LLM-call p50 | 0.45 ms |
+| Per-LLM-call p95 | 1.07 ms |
 | Avg LLM calls / turn | 1.47 |
 
 Offline latencies are sub-millisecond-ish because the stub has no network; they
 prove the measurement path works and give real percentiles. The **live** table
 needs `GROQ_API_KEY` and the same command without `--offline`.
 
-### Optimisation: deterministic keyword pre-router (before / after)
+### Optimisation: deterministic keyword pre-router (classifier-layer measurement)
 
 `python evals/run.py --offline --no-keyword` vs `--offline`:
 
@@ -142,10 +142,16 @@ needs `GROQ_API_KEY` and the same command without `--offline`.
 | Before (no pre-router) | 100.0% | 100.0% | **2.00** | 1.05 ms |
 | After (pre-router) | 100.0% | 100.0% | **0.71** | 1.34 ms |
 
+> **Measurement scope:** This table measures **model classifier calls only** at
+> the classifier layer, not complete agent-turn LLM calls. The "classify p50"
+> column measures the time spent in the `classify_intent` + `classify_safety`
+> calls only, not the full turn latency (which includes slot extraction, tool
+> execution, etc.).
+
 - **Accuracy unchanged** (well within the 1-point budget) — the pre-router only
   short-circuits high-confidence keyword matches.
-- **−64% model classifier calls** (2.00 → 0.71); **12/34** messages resolved with
-  **zero** model calls.
+- **−64% model classifier calls** (2.00 → 0.71); **12/34** messages required
+  **zero model classifier calls**.
 - This reduction is **mode-independent** and is the real mechanism of the live
   speedup: every avoided call removes a network round-trip (typically hundreds of
   ms live), which is where the live p50/p95 improvement would appear.

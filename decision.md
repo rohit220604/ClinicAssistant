@@ -25,9 +25,10 @@ is written to `logs/safety.jsonl` with `degraded=true`, and
 `clinic.safety.failure_count()` counts them, so we can see exactly how often the
 fallback fired and tune the timeout.
 
-**The keyword safety net.** Fail-closed does not mean useless during an outage.
-The deterministic keyword layer runs first, so a clear emergency ("chest pain",
-"साँस नहीं", "seene mein dard") is still caught even with the LLM completely down.
+**The limited deterministic keyword safety net.** Fail-closed does not mean
+useless during an outage. The deterministic keyword layer runs first, so a clear
+emergency ("chest pain", "साँस नहीं", "seene mein dard") is still caught even
+with the LLM completely down.
 
 **When I would revisit it.** If this were a high-volume, low-acuity channel where
 blocking caused patients to give up and not seek care at all, fail-open with

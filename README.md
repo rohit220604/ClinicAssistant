@@ -145,7 +145,7 @@ A safe one-tool turn costs up to three: one safety classification, one chat call
 that emits the tool call, and one chat call that reads the tool result and writes
 the reply. The keyword pre-router already removes the classification call for
 obvious messages (avg model classifier calls/msg dropped **2.00 → 0.71** on the
-eval set; 12/34 need zero model calls). Further wins: a smaller model for
+eval set; 12/34 messages required zero model classifier calls). Further wins: a smaller model for
 classification only (already configurable), running the safety and intent
 classifiers concurrently, and templating boilerplate confirmations (e.g. a
 booking success) instead of a third round-trip.

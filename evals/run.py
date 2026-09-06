@@ -84,6 +84,16 @@ def per_class_recall(actuals: list[str], preds: list[str], labels: list[str]) ->
     return out
 
 
+def per_class_accuracy(actuals: list[str], preds: list[str], labels: list[str]) -> dict:
+    out = {}
+    for label in labels:
+        idx = [i for i, a in enumerate(actuals) if a == label]
+        if idx:
+            correct = sum(1 for i in idx if preds[i] == label)
+            out[label] = (correct, len(idx))
+    return out
+
+
 def print_matrix(title: str, matrix: dict, labels: list[str]) -> None:
     present = [l for l in labels if any(matrix[a][l] or matrix[l][a] for a in labels)]
     width = 5
@@ -118,6 +128,13 @@ def run(cases: list[dict], client: CountingClient, use_keyword: bool) -> dict:
     print("Per-class recall (safety):")
     for label, (c, n) in per_class_recall(safety_actual, safety_pred, VERDICTS).items():
         print(f"  {label:18} {c}/{n}")
+
+    print("\nPer-class accuracy (intent):")
+    for label, (c, n) in per_class_accuracy(intent_actual, intent_pred, INTENTS).items():
+        print(f"  {label:18} {c}/{n} = {c/n:.1%}")
+    print("Per-class accuracy (safety):")
+    for label, (c, n) in per_class_accuracy(safety_actual, safety_pred, VERDICTS).items():
+        print(f"  {label:18} {c}/{n} = {c/n:.1%}")
 
     print_matrix("Intent confusion", confusion(intent_actual, intent_pred, INTENTS), INTENTS)
     print_matrix("Safety confusion", confusion(safety_actual, safety_pred, VERDICTS), VERDICTS)
