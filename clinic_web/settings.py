@@ -17,14 +17,18 @@ DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() in ("1", "true", "yes")
 ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
+    "django.contrib.sessions",
+    "django.contrib.messages",
     "django.contrib.staticfiles",
     "assistant_ui",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
@@ -39,6 +43,7 @@ TEMPLATES = [
             "context_processors": [
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
@@ -46,8 +51,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "clinic_web.wsgi.application"
 
-# No database for this frontend-only commit
+# No database: clinic data lives in clinic.storage; sessions are file-backed.
 DATABASES = {}
+
+SESSION_ENGINE = "django.contrib.sessions.backends.file"
+_SESSION_DIR = BASE_DIR / "data" / "django_sessions"
+_SESSION_DIR.mkdir(parents=True, exist_ok=True)
+SESSION_FILE_PATH = str(_SESSION_DIR)
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"

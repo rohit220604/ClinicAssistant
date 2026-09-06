@@ -13,6 +13,7 @@ venv/
 
 # Local runtime data / logs (never commit patient data)
 data/*.json
+data/django_sessions/
 logs/*.jsonl
 
 # Editor

@@ -13,14 +13,9 @@
             <div class="chat-message assistant">
                 <p>Hello! I can help you log symptoms, book appointments, or show your appointments. How can I assist you today?</p>
             </div>
-            {% if user_message %}
-                <div class="chat-message user">
-                    <p>{{ user_message }}</p>
-                </div>
-            {% endif %}
-            {% for message in messages %}
-                <div class="chat-message assistant">
-                    <p>{{ message }}</p>
+            {% for turn in chat_history %}
+                <div class="chat-message {{ turn.role }}">
+                    <p>{{ turn.content|linebreaksbr }}</p>
                 </div>
             {% endfor %}
         </div>
