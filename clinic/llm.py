@@ -157,15 +157,30 @@ class OfflineClient:
         latest = user_msgs[-1] if user_msgs else ""
         lang = detect_language(latest)
 
-        # Continue an unfinished task first.
+        intent = keyword_intent(latest) or Intent.UNKNOWN
+
         if state and state.pending_intent == Intent.BOOK_APPOINTMENT:
-            return self._continue_booking(state, latest, lang)
+            if intent in {
+                Intent.LIST_APPOINTMENTS,
+                Intent.LOG_SYMPTOM,
+                Intent.SMALL_TALK,
+                Intent.UNKNOWN,
+            }:
+                return self._continue_booking(state, latest, lang)
+
+            if intent == Intent.BOOK_APPOINTMENT:
+                return self._continue_booking(state, latest, lang)
+
+            state.pending_intent = None
+            state.pending_department = None
+            state.pending_date = None
 
         if state and state.pending_intent == Intent.LOG_SYMPTOM:
-            return self._continue_logging(state, latest, lang)
+            if intent in {Intent.UNKNOWN, Intent.LOG_SYMPTOM}:
+                return self._continue_logging(state, latest, lang)
 
-        # Only classify the NEW message when there is no pending task.
-        intent = keyword_intent(latest) or Intent.UNKNOWN
+            state.pending_intent = None
+            state.pending_symptom = None
 
         if intent == Intent.BOOK_APPOINTMENT:
             return self._start_booking(state, latest, lang)

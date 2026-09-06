@@ -18,7 +18,7 @@ DEPARTMENTS = [
 
 _ISO = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
 _SEVERITY_LABELLED = re.compile(r"(?:severity|level|scale|pain)\D{0,6}([1-5])\b")
-_SEVERITY_BARE = re.compile(r"^\s*([1-5])\s*$")
+_SEVERITY_BARE = re.compile(r"\b([1-5])\b")
 
 _RELATIVE = {
     "today": 0, "aaj": 0, "आज": 0,
@@ -52,6 +52,7 @@ def find_severity(text: str) -> int | None:
     m = _SEVERITY_LABELLED.search(text.lower())
     if m:
         return int(m.group(1))
-
-    m = _SEVERITY_BARE.match(text)
+    # A lone 1-5 only counts if there's no ISO date confusing things.
+    without_date = _ISO.sub(" ", text)
+    m = _SEVERITY_BARE.search(without_date)
     return int(m.group(1)) if m else None
