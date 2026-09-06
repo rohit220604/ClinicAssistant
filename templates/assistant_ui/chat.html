@@ -1,0 +1,38 @@
+{% extends "assistant_ui/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="chat-page">
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>Chat with Assistant</h2>
+            <p>Patient ID: {{ patient_id }}</p>
+        </div>
+
+        <div class="chat-messages" id="chat-messages">
+            <div class="chat-message assistant">
+                <p>Hello! I can help you log symptoms, book appointments, or show your appointments. How can I assist you today?</p>
+            </div>
+            {% if user_message %}
+                <div class="chat-message user">
+                    <p>{{ user_message }}</p>
+                </div>
+            {% endif %}
+            {% for message in messages %}
+                <div class="chat-message assistant">
+                    <p>{{ message }}</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        <form method="post" action="{% url 'assistant_ui:chat' %}" class="chat-form" id="chat-form">
+            {% csrf_token %}
+            <input type="hidden" name="patient_id" value="{{ patient_id }}">
+            <div class="chat-input-group">
+                <input type="text" name="message" id="chat-message" placeholder="Type your message..." required autofocus>
+                <button type="submit">Send</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

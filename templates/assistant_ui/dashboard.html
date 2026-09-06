@@ -1,0 +1,115 @@
+{% extends "assistant_ui/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="dashboard">
+    <section class="patient-section">
+        <form method="post" action="{% url 'assistant_ui:dashboard' %}" class="patient-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="set_patient">
+            <label for="id_patient_id">Patient ID</label>
+            <input type="text" name="patient_id" id="id_patient_id" value="{{ patient_id }}" maxlength="50" required>
+            <button type="submit">Set Patient</button>
+        </form>
+    </section>
+
+    <section class="quick-actions">
+        <h2>Quick Actions</h2>
+        <div class="action-cards">
+            <a href="#log-symptom" class="action-card" onclick="document.getElementById('log-symptom').scrollIntoView({behavior: 'smooth'})">
+                <h3>Log a Symptom</h3>
+                <p>Record how you're feeling and its severity.</p>
+            </a>
+            <a href="#book-appointment" class="action-card" onclick="document.getElementById('book-appointment').scrollIntoView({behavior: 'smooth'})">
+                <h3>Book Appointment</h3>
+                <p>Schedule a visit with a department.</p>
+            </a>
+            <a href="#appointments" class="action-card" onclick="document.getElementById('appointments').scrollIntoView({behavior: 'smooth'})">
+                <h3>My Appointments</h3>
+                <p>View your upcoming visits.</p>
+            </a>
+        </div>
+    </section>
+
+    <section id="log-symptom" class="form-section">
+        <h2>Log a Symptom</h2>
+        <form method="post" action="{% url 'assistant_ui:dashboard' %}" class="symptom-form">
+            {% csrf_token %}
+            <input type="hidden" name="patient_id" value="{{ patient_id }}">
+            <div class="form-group">
+                <label for="id_symptom">Symptom</label>
+                <textarea name="symptom" id="id_symptom" rows="3" placeholder="Describe your symptom..." required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="id_severity">Severity (1-5)</label>
+                <input type="number" name="severity" id="id_severity" min="1" max="5" value="3" required>
+            </div>
+            <button type="submit" name="action" value="log_symptom">Log Symptom</button>
+        </form>
+    </section>
+
+    <section id="book-appointment" class="form-section">
+        <h2>Book an Appointment</h2>
+        <form method="post" action="{% url 'assistant_ui:dashboard' %}" class="appointment-form">
+            {% csrf_token %}
+            <input type="hidden" name="patient_id" value="{{ patient_id }}">
+            <div class="form-group">
+                <label for="id_department">Department</label>
+                <input type="text" name="department" id="id_department" placeholder="e.g., cardiology, dermatology" required>
+            </div>
+            <div class="form-group">
+                <label for="id_date">Date</label>
+                <input type="date" name="date" id="id_date" required>
+            </div>
+            <button type="submit" name="action" value="book_appointment">Book Appointment</button>
+        </form>
+    </section>
+
+    <section id="appointments" class="appointments-section">
+        <h2>Upcoming Appointments</h2>
+        {% if appointments %}
+            <table class="appointments-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Department</th>
+                        <th>Date</th>
+                        <th>Booked At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appt in appointments %}
+                        <tr>
+                            <td>{{ appt.id }}</td>
+                            <td>{{ appt.department }}</td>
+                            <td>{{ appt.date }}</td>
+                            <td>{{ appt.booked_at }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="empty-state">No appointments found for patient {{ patient_id }}.</p>
+        {% endif %}
+    </section>
+
+    <section class="chat-section">
+        <h2>Chat with Assistant</h2>
+        <div class="chat-container">
+            <div class="chat-messages">
+                <div class="chat-message assistant">
+                    <p>Hello! I can help you log symptoms, book appointments, or show your appointments. How can I assist you today?</p>
+                </div>
+            </div>
+            <form method="post" action="{% url 'assistant_ui:chat' %}" class="chat-form" id="chat-form">
+                {% csrf_token %}
+                <input type="hidden" name="patient_id" value="{{ patient_id }}">
+                <div class="chat-input-group">
+                    <input type="text" name="message" id="chat-message" placeholder="Type your message..." required>
+                    <button type="submit">Send</button>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>
+{% endblock %}

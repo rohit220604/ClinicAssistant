@@ -3,3 +3,4 @@ python-dotenv>=1.0
 PyYAML>=6.0
 langgraph>=1.0
 pytest>=8.0
+Django>=5.2,<6.0

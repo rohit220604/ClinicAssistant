@@ -1,0 +1,38 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinic Assistant</title>
+    <link rel="stylesheet" href="{% static 'assistant_ui/css/style.css' %}">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container">
+            <h1>Clinic Assistant</h1>
+            <p class="subtitle">Log symptoms, book appointments, and view your upcoming visits.</p>
+        </div>
+    </header>
+
+    <main class="container">
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="message message-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>Clinic Assistant &mdash; Frontend Demo (COMMIT 1)</p>
+        </div>
+    </footer>
+
+    <script src="{% static 'assistant_ui/js/app.js' %}"></script>
+</body>
+</html>
